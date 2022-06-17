@@ -2,18 +2,12 @@
 
 object ChatService {
 
-    private val chatList: MutableList<Chat> = mutableListOf()
+    private var chatList: MutableList<Chat> = mutableListOf()
 
     fun createChat(userId: Int, message: String): Chat {
 
-        var newChat = Chat(userId = userId)
+        var newChat = if (chatList.isNotEmpty()) Chat(chatId = chatList.last().chatId + 1 ,userId = userId) else Chat(userId = userId)
 
-        for (chat in chatList) {
-            if (chat.chatId == newChat.chatId) {
-
-                newChat = newChat.copy(chatId = newChat.chatId + 1)
-            }
-        }
         val msg = Message(userId = userId, chatId = newChat.chatId, text = message)
         newChat.messages += msg
         chatList += newChat
@@ -51,7 +45,7 @@ object ChatService {
     }
 
     fun getChat(chatId: Int): Chat? {
-        val result = chatList.find(fun(chat: Chat) = (chat.chatId == chatId))
+        val result = chatList.find {  chat: Chat -> chat.chatId == chatId }
             ?: throw NoChatFoundException("no chat with id: $chatId")
         return result
     }
@@ -63,18 +57,21 @@ object ChatService {
     fun getUnreadChatsCount(): Int {
         val predicate = fun(msg: Message) = msg.isRead == false
 
-        return chatList.count(fun(chat: Chat) = chat.messages.any(predicate))
+        return chatList.count {  chat: Chat -> chat.messages.any(predicate) }
 
     }
 
     fun getChatMessages(chatId: Int, lastMessageId: Int, messageCount: Int): MutableList<Message> {
-        val messages = if (getChat(chatId) != null) getChat(chatId)!!.messages else mutableListOf()
+        val messages = getChat(chatId)?.messages ?: mutableListOf()
 
         val lastMessage = getMessage(chatId, lastMessageId)
         val indexOfLastMessage = messages.indexOf(lastMessage)
 
         messages.forEach { message: Message -> readMessage(message) }
-        return messages.subList(indexOfLastMessage, indexOfLastMessage + messageCount)
+
+        return if ((indexOfLastMessage + messageCount) > messages.size) messages.subList(indexOfLastMessage, messages.size)
+        else messages.subList(indexOfLastMessage, indexOfLastMessage + messageCount)
+
     }
 
 
@@ -85,6 +82,10 @@ object ChatService {
     fun getChats(userId: Int): List<Chat> {
         return chatList.filter {chat: Chat -> chat.userId == userId}
             .filter { chat: Chat -> chat.messages.any() }
+    }
+
+    fun makeChatListEmptyAgain() {
+        chatList.clear()
     }
 
 

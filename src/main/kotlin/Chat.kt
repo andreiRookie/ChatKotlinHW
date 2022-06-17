@@ -1,7 +1,7 @@
 import kotlin.random.Random
 
 data class Chat(
-    val chatId: Int = Random.nextInt(0, 1000),
+    val chatId: Int = 1,
     var userId: Int = Random.nextInt(0, 3000)    //var userId: Int = user.userId
 
 ) {
