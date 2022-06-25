@@ -24,16 +24,14 @@ object ChatService {
     fun createMessage(userId: Int, chatId: Int, text: String): Message {
 
         val newMessage = Message(userId = userId, chatId = chatId, text = text)
-
-        getChat(chatId).messages.add(newMessage)
-        return newMessage
+        return getChat(chatId).messages.add(newMessage).let { newMessage }
     }
 
 
     fun deleteChat(chatId: Int): Chat {
+
         val chatToDelete = getChat(chatId)
-        chatList.remove(getChat(chatId))
-        return chatToDelete
+        chatList.remove(getChat(chatId)).let { return chatToDelete }
     }
 
     fun deleteMessage(chatId: Int, messageId: Int): Message {
