@@ -45,11 +45,9 @@ class ChatServiceTest {
         val testChat = ChatService.createChat(userId = 123, message = "hello")
 
         //act
-
         val deletedChat = ChatService.deleteChat(testChat.chatId)
 
         //assert
-
         assertEquals(testChat, deletedChat)
     }
 
