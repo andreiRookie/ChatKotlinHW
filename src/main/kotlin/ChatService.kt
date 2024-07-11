@@ -31,7 +31,7 @@ object ChatService {
     fun deleteChat(chatId: Int): Chat {
 
         val chatToDelete = getChat(chatId)
-        chatList.remove(getChat(chatId)).let { return chatToDelete }
+        chatList.remove(chatToDelete).let { return chatToDelete }
     }
 
     fun deleteMessage(chatId: Int, messageId: Int): Message {
