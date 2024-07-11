@@ -6,48 +6,54 @@ object ChatService {
 
     fun createChat(userId: Int, message: String): Chat {
 
-        var newChat = if (chatList.isNotEmpty()) Chat(chatId = chatList.last().chatId + 1 ,userId = userId) else Chat(userId = userId)
+        val newChat = if (chatList.isNotEmpty())
+            Chat(chatId = chatList.last().chatId + 1 ,userId = userId)
+            else Chat(userId = userId)
 
-        val msg = Message(userId = userId, chatId = newChat.chatId, text = message)
-        newChat.messages += msg
         chatList += newChat
+
+        createMessage(userId = userId, chatId = newChat.chatId, text = message)
+
+//        val msg = Message(userId = userId, chatId = newChat.chatId, text = message)
+//        newChat.messages += msg
+//        chatList += newChat
+
         return newChat
     }
 
     fun createMessage(userId: Int, chatId: Int, text: String): Message {
 
         val newMessage = Message(userId = userId, chatId = chatId, text = text)
-
-        getChat(chatId)?.messages?.add(newMessage)
-        return newMessage
+        return getChat(chatId).messages.add(newMessage).let { newMessage }
     }
 
 
-    fun deleteChat(chatId: Int): Chat? {
+    fun deleteChat(chatId: Int): Chat {
+
         val chatToDelete = getChat(chatId)
-        chatList.remove(getChat(chatId))
-        return chatToDelete
+        chatList.remove(chatToDelete).let { return chatToDelete }
     }
 
     fun deleteMessage(chatId: Int, messageId: Int): Message {
-        val messages = getChat(chatId)?.messages
+        val messages = getChat(chatId).messages
         val messageToDelete = getMessage(chatId, messageId)
 
-        messages?.remove(getMessage(chatId, messageId))
+        messages.remove(getMessage(chatId, messageId))
 
-        if (messages?.isEmpty() == true) deleteChat(chatId)
+        if (messages.isEmpty()) deleteChat(chatId)
+
         return messageToDelete
     }
 
     fun getMessage(chatId: Int, messageId: Int): Message {
-        return getChat(chatId)?.messages?.find {message: Message -> message.messageId == messageId}
+
+        return getChat(chatId).messages.find {message: Message -> message.messageId == messageId}
             ?: throw NoMessageFoundException("no message with id: $messageId in chat $chatId")
     }
 
-    fun getChat(chatId: Int): Chat? {
-        val result = chatList.find {  chat: Chat -> chat.chatId == chatId }
+    fun getChat(chatId: Int): Chat {
+        return chatList.find {  chat: Chat -> chat.chatId == chatId }
             ?: throw NoChatFoundException("no chat with id: $chatId")
-        return result
     }
 
     fun readMessage(message: Message) {
@@ -55,23 +61,33 @@ object ChatService {
     }
 
     fun getUnreadChatsCount(): Int {
-        val predicate = fun(msg: Message) = msg.isRead == false
+        val predicate = { msg: Message -> !msg.isRead}
 
         return chatList.count {  chat: Chat -> chat.messages.any(predicate) }
-
     }
 
     fun getChatMessages(chatId: Int, lastMessageId: Int, messageCount: Int): MutableList<Message> {
-        val messages = getChat(chatId)?.messages ?: mutableListOf()
 
+        val messages = getChat(chatId).messages
         val lastMessage = getMessage(chatId, lastMessageId)
         val indexOfLastMessage = messages.indexOf(lastMessage)
 
-        messages.forEach { message: Message -> readMessage(message) }
+        val messageMaxCount = if ((indexOfLastMessage + messageCount) > messages.size)
+            messages.size
+            else indexOfLastMessage + messageCount
 
-        return if ((indexOfLastMessage + messageCount) > messages.size) messages.subList(indexOfLastMessage, messages.size)
-        else messages.subList(indexOfLastMessage, indexOfLastMessage + messageCount)
+        return messages
+            .onEach { message: Message -> readMessage(message) }
+            .subList(indexOfLastMessage, messageMaxCount)
 
+//        val messages = getChat(chatId).messages
+//
+//        val lastMessage = getMessage(chatId, lastMessageId)
+//        val indexOfLastMessage = messages.indexOf(lastMessage)
+//
+//        messages.forEach { message: Message -> readMessage(message) }
+//
+//        return messages.subList(indexOfLastMessage, messageMaxCount)
     }
 
 
